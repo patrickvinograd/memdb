@@ -1,0 +1,12 @@
+BEGIN  
+SET a foo 
+GET a 
+BEGIN  
+SET a bar 
+GET a 
+SET a baz 
+ROLLBACK  
+GET a 
+ROLLBACK  
+GET a  
+END 

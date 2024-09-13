@@ -1,0 +1,8 @@
+SET a foo 
+SET a foo 
+COUNT foo 
+GET a 
+DELETE a 
+GET a 
+COUNT foo 
+END 
