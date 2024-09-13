@@ -31,18 +31,15 @@ def transact(f, args):
     f(*args)
 
 def do_set(k, v):
-    prev = data.get(k, None)
-    if prev:
-        count_data[prev] = count_data[prev] - 1
+    v_old = data.get(k, None)
+    if v_old:
+        count_data[v_old] = count_data[v_old] - 1
     data[k] = v
     count_data[v] = count_data[v] + 1
 
 def do_get(k):
     result = data.get(k, None)
-    if result:
-        print(result)
-    else:
-        print("NULL")
+    print(result if result else "NULL")
 
 def do_delete(k):
     if k in data:
@@ -52,6 +49,9 @@ def do_delete(k):
 
 def do_count(v):
     print(count_data[v])
+
+def do_end():
+    sys.exit(0)
 
 def do_begin_txn():
     undo_log.append(Checkpoint({}, {}))
@@ -69,29 +69,33 @@ def do_rollback_txn():
 def do_commit_txns():
     undo_log = []
 
-def parse_and_execute(command):
+# Dispatch table for commands
+# operation_name: (function, expected_args, is_write_operation)
+COMMANDS = {
+  'SET':      (do_set, 2, True),
+  'GET':      (do_get, 1, False),
+  'DELETE':   (do_delete, 1, True),
+  'COUNT':    (do_count, 1, False),
+  'END':      (do_end, 0, False),
+  'BEGIN':    (do_begin_txn, 0, False),
+  'ROLLBACK': (do_rollback_txn, 0, False),
+  'COMMIT':   (do_commit_txns, 0, False)
+}
+
+def parse_and_dispatch(command):
     tokens = command.split()
     op, args = tokens[0], tokens[1:] 
-    if op == 'SET':
-        transact(do_set, args)
-    elif op == 'GET':
-        do_get(*args)
-    elif op == 'DELETE':
-        transact(do_delete, args)
-    elif op == 'COUNT':
-        do_count(*args)
-    elif op == 'END':
-        sys.exit(0)
-    elif op == 'BEGIN':
-        do_begin_txn()
-    elif op == 'ROLLBACK':
-        do_rollback_txn()
-    elif op == 'COMMIT':
-        do_commit_txns()
+    if op not in COMMANDS:
+        sys.exit("Error, unrecognized command: " + str(op))
+    fun, argc, is_write = COMMANDS[op]
+    if len(args) != argc:
+        sys.exit("Error, unexpected arguments: " + str(tokens))
+
+    if is_write:
+        transact(fun, args)
     else:
-        sys.stderr.write("Error, unrecognized command: " + str(op))
-        sys.exit(1)
+        fun(*args)
 
 if __name__ == '__main__':
     for command in sys.stdin:
-        parse_and_execute(command)
+        parse_and_dispatch(command)
