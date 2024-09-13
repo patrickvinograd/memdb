@@ -27,7 +27,6 @@ def save_state(checkpoint, k, v=None):
 def transact(f, args):
     if len(undo_log) > 0:
         save_state(undo_log[-1], *args)
-        #print(undo_log)
     f(*args)
 
 def do_set(k, v):
